@@ -17,16 +17,18 @@ angular.module('starter', ['ionic'])
       }
 
       var Q = Quintus()
-        .include("Sprites, Scenes, 2D, Input, Touch, UI")
+        .include("Sprites, Scenes, Input, 2D, Touch, UI")
         .setup({maximize: true})
         .controls().touch();
 
-      Q.input.keyboardControls();
-      Q.input.joypadControls();
+      Q.gravityY = 0;
+      Q.gravityX = 0;
 
       Q.Sprite.extend("Player", {
         init: function(p) {
           this._super(p, {sheet: "player", x: 410, y: 90});
+
+          this.add('2d, platformerControls');
 
           this.on("hit.sprite", function(collision) {
             if (collision.obj.isA("Tower")) {
@@ -37,7 +39,6 @@ angular.module('starter', ['ionic'])
         },
         step: function(dt) {
           var p = this.p;
-
           switch (true) {
             case Q.inputs['right']:
               p.x += 5;
@@ -51,8 +52,6 @@ angular.module('starter', ['ionic'])
             case Q.inputs['down']:
               p.y += 5;
               break;
-            default:
-              console.log('HERERRR?');
           }
         }
       });
@@ -78,7 +77,6 @@ angular.module('starter', ['ionic'])
           this.on("bump.top", function(collision) {
             if (collision.obj.isA("Player")) {
               this.destroy();
-              collision.obj.p.vy = -300;
             }
           });
         }
@@ -104,7 +102,7 @@ angular.module('starter', ['ionic'])
         var button = box.insert(new Q.UI.Button({
           x: 0, y: 0, fill: "#CCCCCC",
           label: "Play Again"
-        }))
+        }));
         var label = box.insert(new Q.UI.Text({
           x: 10, y: -10 - button.p.h,
           label: stage.options.label
