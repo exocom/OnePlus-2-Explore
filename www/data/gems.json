@@ -1,0 +1,6 @@
+{
+  "gem_blue":{"sx":0,"sy":0,"cols":1,"tilew":32,"tileh":32,"frames":1},
+  "gem_green":{"sx":32,"sy":0,"cols":1,"tilew":32,"tileh":32,"frames":1},
+  "gem_red":{"sx":0,"sy":32,"cols":1,"tilew":32,"tileh":32,"frames":1},
+  "gem_white":{"sx":32,"sy":32,"cols":1,"tilew":32,"tileh":32,"frames":1}
+}
