@@ -74,7 +74,7 @@ angular.module('starter', ['ionic'])
         stage.viewport.scale = 1;
       });
 
-      Q.loadTMX("all-levels.tmx, test-64.png, player.json, dungeon.png, SaraFullSheet.png", function () {
+      Q.loadTMX("all-levels.tmx, player.json, dungeon.png, SaraFullSheet.png", function () {
         Q.compileSheets("SaraFullSheet.png", "player.json");
         Q.animations("player", {
           walk_right: {frames: [0, 1, 2, 3, 4, 5, 6, 7], rate: 1 / 15, flip: false, loop: true},
