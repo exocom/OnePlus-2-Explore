@@ -1,11 +1,12 @@
-/*global Quintus:false */
+/*global Quintus:false, module:false, window: false */
+
+var quintusTouch = function(Quintus) {
+"use strict";
 
 Quintus.Touch = function(Q) {
   if(Q._isUndefined(Quintus.Sprites)) {
     throw "Quintus.Touch requires Quintus.Sprites Module";
   }
-
-  var hasTouch =  !!('ontouchstart' in window);
 
   var touchStage = [0];
   var touchType = 0;
@@ -49,33 +50,40 @@ Quintus.Touch = function(Q) {
     },
 
     normalizeTouch: function(touch,stage) {
-      var canvasPosX = touch.offsetX,
-          canvasPosY = touch.offsetY;
-         
 
-      if(Q._isUndefined(canvasPosX) || Q._isUndefined(canvasPosY)) {
-        canvasPosX = touch.layerX;
-        canvasPosY = touch.layerY;
+      var el = Q.el,
+        rect = el.getBoundingClientRect(),
+        style = window.getComputedStyle(el),
+        posX = touch.clientX - rect.left - parseInt(style.paddingLeft, 10),
+        posY = touch.clientY - rect.top  - parseInt(style.paddingTop, 10);
+
+      if(Q._isUndefined(posX) || Q._isUndefined(posY)) {
+         posX = touch.offsetX;
+         posY = touch.offsetY;
       }
 
-      if(Q._isUndefined(canvasPosX) || Q._isUndefined(canvasPosY)) {
+      if(Q._isUndefined(posX) || Q._isUndefined(posY)) {
+        posX = touch.layerX;
+        posY = touch.layerY;
+      }
+
+      if(Q._isUndefined(posX) || Q._isUndefined(posY)) {
         if(Q.touch.offsetX === void 0) {
           Q.touch.offsetX = 0;
           Q.touch.offsetY = 0;
-          var el = Q.el;
+          el = Q.el;
           do {
             Q.touch.offsetX += el.offsetLeft;
             Q.touch.offsetY += el.offsetTop;
           } while(el = el.offsetParent);
         }
-        canvasPosX = touch.pageX - Q.touch.offsetX;
-        canvasPosY = touch.pageY - Q.touch.offsetY;
+        posX = touch.pageX - Q.touch.offsetX;
+        posY = touch.pageY - Q.touch.offsetY;
       }
 
+      this.touchPos.p.ox = this.touchPos.p.px = posX / Q.cssWidth * Q.width;
+      this.touchPos.p.oy = this.touchPos.p.py = posY / Q.cssHeight * Q.height;
 
-      this.touchPos.p.ox = this.touchPos.p.px = canvasPosX / Q.cssWidth * Q.width;
-      this.touchPos.p.oy = this.touchPos.p.py = canvasPosY / Q.cssHeight * Q.height;
-      
       if(stage.viewport) {
         this.touchPos.p.px /= stage.viewport.scale;
         this.touchPos.p.py /= stage.viewport.scale;
@@ -101,7 +109,7 @@ Quintus.Touch = function(Q) {
 
           if(!stage) { continue; }
 
-          touch.identifier = touch.identifier || 0;
+          var touchIdentifier = touch.identifier || 0;
           var pos = this.normalizeTouch(touch,stage);
 
           stage.regrid(pos,true);
@@ -114,19 +122,19 @@ Quintus.Touch = function(Q) {
           }
 
           if(obj && !this.touchedObjects[obj]) {
-            this.activeTouches[touch.identifier] = {
+            this.activeTouches[touchIdentifier] = {
               x: pos.p.px,
               y: pos.p.py,
               origX: obj.p.x,
               origY: obj.p.y,
               sx: pos.p.ox,
               sy: pos.p.oy,
-              identifier: touch.identifier,
+              identifier: touchIdentifier,
               obj: obj,
               stage: stage
             };
             this.touchedObjects[obj.p.id] = true;
-            obj.trigger('touch', this.activeTouches[touch.identifier]);
+            obj.trigger('touch', this.activeTouches[touchIdentifier]);
             break;
           }
 
@@ -140,10 +148,10 @@ Quintus.Touch = function(Q) {
       var touches = e.changedTouches || [ e ];
 
       for(var i=0;i<touches.length;i++) {
-        var touch = touches[i];
-        touch.identifier = touch.identifier || 0;
+        var touch = touches[i],
+            touchIdentifier = touch.identifier || 0;
 
-        var active = this.activeTouches[touch.identifier],
+        var active = this.activeTouches[touchIdentifier],
             stage = active && active.stage;
 
         if(active) {
@@ -163,16 +171,15 @@ Quintus.Touch = function(Q) {
       var touches = e.changedTouches || [ e ];
 
       for(var i=0;i<touches.length;i++) {
-        var touch = touches[i];
+        var touch = touches[i],
+            touchIdentifier = touch.identifier || 0;
 
-        touch.identifier = touch.identifier || 0;
-
-        var active = this.activeTouches[touch.identifier];
+        var active = this.activeTouches[touchIdentifier];
 
         if(active) {
           active.obj.trigger('touchEnd', active);
           delete this.touchedObjects[active.obj.p.id];
-          this.activeTouches[touch.identifier] = null;
+          this.activeTouches[touchIdentifier] = null;
         }
       }
       e.preventDefault();
@@ -203,3 +210,15 @@ Quintus.Touch = function(Q) {
   };
 
 };
+
+
+};
+
+
+if(typeof Quintus === 'undefined') {
+  module.exports = quintusTouch;
+} else {
+  quintusTouch(Quintus);
+}
+
+

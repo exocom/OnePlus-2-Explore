@@ -1,15 +1,14 @@
 {
   "name": "Quintus",
   "homepage": "https://github.com/cykod/Quintus",
-  "version": "0.1.5",
-  "_release": "0.1.5",
+  "_release": "c97bbd93ae",
   "_resolution": {
-    "type": "version",
-    "tag": "v0.1.5",
-    "commit": "05175ea683f5e224827fe39b31b33d21b2aa866a"
+    "type": "branch",
+    "branch": "master",
+    "commit": "c97bbd93aec86dca1569aea762bcf98da428402e"
   },
   "_source": "https://github.com/cykod/Quintus.git",
-  "_target": "~0.1.5",
+  "_target": "master",
   "_originalSource": "https://github.com/cykod/Quintus.git",
   "_direct": true
 }

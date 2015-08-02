@@ -1,4 +1,7 @@
-/*global Quintus:false */
+/*global Quintus:false, module:false */
+
+var quintusAnim = function(Quintus) {
+"use strict";
 
 Quintus.Anim = function(Q) {
 
@@ -22,8 +25,8 @@ Quintus.Anim = function(Q) {
       this.entity.on("step",this,"step");
     },
     extend: {
-      play: function(name,priority) {
-        this.animation.play(name,priority);
+      play: function(name,priority,resetFrame) {
+        this.animation.play(name,priority,resetFrame);
       }
     },
     step: function(dt) {
@@ -36,8 +39,7 @@ Quintus.Anim = function(Q) {
         p.animationTime += dt;
         if(p.animationChanged) {
           p.animationChanged = false;
-        } else { 
-          p.animationTime += dt;
+        } else {
           if(p.animationTime > rate) {
             stepped = Math.floor(p.animationTime / rate);
             p.animationTime -= stepped * rate;
@@ -52,7 +54,7 @@ Quintus.Anim = function(Q) {
               entity.trigger('animEnd.' + p.animation);
               p.animation = null;
               p.animationPriority = -1;
-              if(anim.trigger) {  
+              if(anim.trigger) {
                 entity.trigger(anim.trigger,anim.triggerData);
               }
               if(anim.next) { this.play(anim.next,anim.nextPriority); }
@@ -67,24 +69,30 @@ Quintus.Anim = function(Q) {
         }
         p.sheet = anim.sheet || p.sheet;
         p.frame = anim.frames[p.animationFrame];
+        if(anim.hasOwnProperty("flip")) { p.flip  = anim.flip; }
       }
     },
 
-    play: function(name,priority) {
+    play: function(name,priority,resetFrame) {
       var entity = this.entity,
           p = entity.p;
       priority = priority || 0;
       if(name !== p.animation && priority >= p.animationPriority) {
+        if(resetFrame === undefined) {
+          resetFrame = true;
+        }
         p.animation = name;
-        p.animationChanged = true;
-        p.animationTime = 0;
-        p.animationFrame = 0;
+        if(resetFrame) {
+          p.animationChanged = true;
+          p.animationTime = 0;
+          p.animationFrame = 0;
+        }
         p.animationPriority = priority;
         entity.trigger('anim');
         entity.trigger('anim.' + p.animation);
       }
     }
-  
+
   });
 
 
@@ -95,6 +103,7 @@ Quintus.Anim = function(Q) {
         speedY: 1,
         repeatY: true,
         repeatX: true,
+        renderAlways: true,
         type: 0
       }));
       this.p.repeatW = this.p.repeatW || this.p.w;
@@ -106,31 +115,35 @@ Quintus.Anim = function(Q) {
           asset = this.asset(),
           sheet = this.sheet(),
           scale = this.stage.viewport ? this.stage.viewport.scale : 1,
-          viewX = this.stage.viewport ? this.stage.viewport.x : 0,
-          viewY = this.stage.viewport ? this.stage.viewport.y : 0,
-          offsetX = p.x + viewX * this.p.speedX,
-          offsetY = p.y + viewY * this.p.speedY,
-          curX, curY, startX;
+          viewX = Math.floor(this.stage.viewport ? this.stage.viewport.x : 0),
+          viewY = Math.floor(this.stage.viewport ? this.stage.viewport.y : 0),
+          offsetX = Math.floor(p.x + viewX * this.p.speedX),
+          offsetY = Math.floor(p.y + viewY * this.p.speedY),
+          curX, curY, startX, endX, endY;
       if(p.repeatX) {
-        curX = Math.floor(-offsetX % p.repeatW);
+        curX = -offsetX % p.repeatW;
         if(curX > 0) { curX -= p.repeatW; }
       } else {
         curX = p.x - viewX;
       }
       if(p.repeatY) {
-        curY = Math.floor(-offsetY % p.repeatH);
+        curY = -offsetY % p.repeatH;
         if(curY > 0) { curY -= p.repeatH; }
       } else {
         curY = p.y - viewY;
       }
+
       startX = curX;
-      while(curY < Q.height / scale) {
+      endX = Q.width / Math.abs(scale) / Math.abs(p.scale || 1) + p.repeatW;
+      endY = Q.height / Math.abs(scale) / Math.abs(p.scale || 1) + p.repeatH;
+
+      while(curY < endY) {
         curX = startX;
-        while(curX < Q.width / scale) {
+        while(curX < endX) {
           if(sheet) {
-            sheet.draw(ctx,Math.floor(curX + viewX), Math.floor(curY + viewY),p.frame);
+            sheet.draw(ctx,curX + viewX,curY + viewY,p.frame);
           } else {
-            ctx.drawImage(asset,Math.floor(curX + viewX),Math.floor(curY + viewY));
+            ctx.drawImage(asset,curX + viewX,curY + viewY);
           }
           curX += p.repeatW;
           if(!p.repeatX) { break; }
@@ -197,7 +210,7 @@ Quintus.Anim = function(Q) {
       }
 
       if(progress >= 1) {
-        if(this.options.callback) { 
+        if(this.options.callback) {
           this.options.callback.apply(this.entity);
         }
       }
@@ -239,7 +252,7 @@ Quintus.Anim = function(Q) {
           var lastTween = this.tween._tweens[tweenCnt - 1];
           options = options || {};
           options['delay'] = lastTween.duration - lastTween.time + lastTween.delay;
-        } 
+        }
 
         this.animate(properties,duration,easing,options);
         return this;
@@ -264,3 +277,11 @@ Quintus.Anim = function(Q) {
 
 };
 
+
+};
+
+if(typeof Quintus === 'undefined') {
+  module.exports = quintusAnim;
+} else {
+  quintusAnim(Quintus);
+}

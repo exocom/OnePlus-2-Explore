@@ -1,16 +1,75 @@
-/*global Quintus:false */
+/*global Quintus:false, module:false */
 
+/**
+Quintus HTML5 Game Engine - Input Module
+
+The code in `quintus_input.js` defines the `Quintus.Input` module, which
+concerns itself with game-type (pretty anything besides touchscreen input)
+
+@module Quintus.Input
+*/
+
+
+var quintusInput = function(Quintus) { 
+"use strict";
+
+/**
+ * Quintus Input Module
+ *
+ * @class Quintus.Input
+ */
 Quintus.Input = function(Q) {
-  var KEY_NAMES = { LEFT: 37, RIGHT: 39, SPACE: 32,
-                    UP: 38, DOWN: 40,
-                    Z: 90, X: 88   
-                  };
-  
-  var DEFAULT_KEYS = { LEFT: 'left', RIGHT: 'right',
-                       UP: 'up',     DOWN: 'down',
-                       SPACE: 'fire',
-                       Z: 'fire',
-                       X: 'action' };
+  /**
+   * Provided key names mapped to key codes - add more names and key codes as necessary
+   *
+   * @for Quintus.Input
+   * @property KEY_NAMES
+   * @type Object
+   * @static
+   */
+  var KEY_NAMES = Q.KEY_NAMES = {
+    LEFT: 37, RIGHT: 39,
+    UP: 38, DOWN: 40,
+
+    ZERO : 48, ONE : 49, TWO : 50,
+    THREE : 51, FOUR : 52, FIVE : 53,
+    SIX : 54, SEVEN : 55, EIGHT : 56,
+    NINE : 57,
+
+    A : 65, B : 66, C : 67,
+    D : 68, E : 69, F : 70,
+    G : 71, H : 72, I : 73,
+    J : 74, K : 75, L : 76,
+    M : 77, N : 78, O : 79,
+    P : 80, Q : 81, R : 82,
+    S : 83, T : 84, U : 85,
+    V : 86, W : 87, X : 88,
+    Y : 89, Z : 90,
+
+    ENTER: 13,
+    ESC: 27,
+    BACKSPACE : 8,
+    TAB : 9,
+    SHIFT : 16,
+    CTRL : 17,
+    ALT : 18,
+    SPACE: 32,
+
+    HOME : 36, END : 35,
+    PGGUP : 33, PGDOWN : 34
+  };
+
+  var DEFAULT_KEYS = {
+    LEFT: 'left', RIGHT: 'right',
+    UP: 'up',     DOWN: 'down',
+    SPACE: 'fire',
+    Z: 'fire',
+    X: 'action',
+    ENTER: 'confirm',
+    ESC: 'esc',
+    P: 'P',
+    S: 'S'
+  };
 
   var DEFAULT_TOUCH_CONTROLS  = [ ['left','<' ],
                             ['right','>' ],
@@ -21,13 +80,29 @@ Quintus.Input = function(Q) {
   // Clockwise from midnight (a la CSS)
   var DEFAULT_JOYPAD_INPUTS =  [ 'up','right','down','left'];
 
+  /**
+   * Current state of bound inputs
+   *
+   * @for Quintus.Input
+   * @property Q.inputs
+   * @type Object
+   */
   Q.inputs = {};
   Q.joypad = {};
 
   var hasTouch =  !!('ontouchstart' in window);
 
 
-  // Convert a canvas point to a stage point, x dimension
+  /**
+   *
+   * Convert a canvas point to a stage point, x dimension
+   *
+   * @method Q.canvasToStageX
+   * @for Quintus.Input
+   * @param {Float} x
+   * @param {Q.Stage} stage
+   * @returns {Integer} x
+   */
   Q.canvasToStageX = function(x,stage) {
     x = x / Q.cssWidth * Q.width;
     if(stage.viewport) {
@@ -38,6 +113,15 @@ Quintus.Input = function(Q) {
     return x;
   };
 
+  /**
+   *
+   * Convert a canvas point to a stage point, y dimension
+   *
+   * @method Q.canvasToStageY
+   * @param {Float} y
+   * @param {Q.Stage} stage
+   * @returns {Integer} y
+   */
   Q.canvasToStageY = function(y,stage) {
       y = y / Q.cssWidth * Q.width;
       if(stage.viewport) {
@@ -50,6 +134,15 @@ Quintus.Input = function(Q) {
 
 
 
+  /**
+   *
+   * Button and mouse input subsystem for Quintus.
+   * An instance of this class is auto-created as {{#crossLink "Q.input"}}{{/crossLink}}
+   *
+   * @class Q.InputSystem
+   * @extends Q.Evented
+   * @for Quintus.Input
+   */
   Q.InputSystem = Q.Evented.extend({
     keys: {},
     keypad: {},
@@ -57,18 +150,24 @@ Quintus.Input = function(Q) {
     touchEnabled: false,
     joypadEnabled: false,
 
+    /**
+     * Bind a key name or keycode to an action name (used by `keyboardControls`)
+     *
+     * @method bindKey
+     * @for Q.InputSystem
+     * @param {String or Integer} key - name or integer keycode for to bind
+     * @param {String} name - name of action to bind to
+     */
     bindKey: function(key,name) {
       Q.input.keys[KEY_NAMES[key] || key] = name;
     },
 
-    keyboardControls: function(keys) {
-      keys = keys || DEFAULT_KEYS;
-      Q._each(keys,function(name,key) {
-       this.bindKey(key,name);
-      },Q.input);
-      this.enableKeyboard();
-    },
-
+    /**
+     * Enable keyboard controls by binding to events
+     *
+     * @for Q.InputSystem
+     * @method enableKeyboard
+     */
     enableKeyboard: function() {
       if(this.keyboardEnabled) { return false; }
 
@@ -83,7 +182,9 @@ Quintus.Input = function(Q) {
           Q.input.trigger(actionName);
           Q.input.trigger('keydown',e.keyCode);
         }
-        e.preventDefault();
+        if(!e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+        }
       },false);
 
       Q.el.addEventListener("keyup",function(e) {
@@ -96,8 +197,24 @@ Quintus.Input = function(Q) {
         e.preventDefault();
       },false);
 
-      Q.el.focus();
+      if(Q.options.autoFocus) {  Q.el.focus(); }
       this.keyboardEnabled = true;
+    },
+
+
+    /**
+     * Convenience method to activate keyboard controls (call `bindKey` and `enableKeyboard` internally)
+      *
+     * @method keyboardControls
+     * @for Q.InputSystem
+     * @param {Object} [keys] - hash of key names or codes to actions
+     */
+    keyboardControls: function(keys) {
+      keys = keys || DEFAULT_KEYS;
+      Q._each(keys,function(name,key) {
+       this.bindKey(key,name);
+      },Q.input);
+      this.enableKeyboard();
     },
 
     _containerOffset: function() {
@@ -111,7 +228,7 @@ Quintus.Input = function(Q) {
     },
 
     touchLocation: function(touch) {
-      var el = Q.el, 
+      var el = Q.el,
         posX = touch.offsetX,
         posY = touch.offsetY,
         touchX, touchY;
@@ -134,6 +251,31 @@ Quintus.Input = function(Q) {
       return { x: touchX, y: touchY };
     },
 
+    /**
+     * Activate touch button controls - pass in an options hash to override
+     *
+     * Default Options:
+     *
+     *     {
+     *        left: 0,
+     *        gutter:10,
+     *        controls: DEFAULT_TOUCH_CONTROLS,
+     *        width: Q.width,
+     *        bottom: Q.height
+     *      }
+     *
+     * Default controls are left and right buttons, a space, and 'a' and 'b' buttons, as defined as an Array of Arrays below:
+     *
+     *      [ ['left','<' ],
+     *        ['right','>' ],
+     *        [],  // use an empty array as a spacer
+     *        ['action','b'],
+     *        ['fire', 'a' ]]
+     *
+     * @method touchControls
+     * @for Q.InputSystem
+     * @param {Object} [opts] - Options hash
+     */
     touchControls: function(opts) {
       if(this.touchEnabled) { return false; }
       if(!hasTouch) { return false; }
@@ -143,16 +285,20 @@ Quintus.Input = function(Q) {
         gutter:10,
         controls: DEFAULT_TOUCH_CONTROLS,
         width: Q.width,
-        bottom: Q.height
+        bottom: Q.height,
+        fullHeight: false
       },opts);
 
       opts.unit = (opts.width / opts.controls.length);
-      opts.size = opts.unit - 2 * opts.gutter;
+      opts.size = opts.unit - (opts.gutter * 2);
 
       function getKey(touch) {
-        var pos = Q.input.touchLocation(touch);
+        var pos = Q.input.touchLocation(touch),
+            minY = opts.bottom - opts.unit;
         for(var i=0,len=opts.controls.length;i<len;i++) {
-          if(pos.x < opts.unit * (i+1)) {
+          var minX = i * opts.unit + opts.gutter;
+          if(pos.x >= minX && pos.x <= (minX+opts.size) && (opts.fullHeight || (pos.y >= minY + opts.gutter && pos.y <= (minY+opts.unit - opts.gutter))))
+          {
             return opts.controls[i][0];
           }
         }
@@ -212,6 +358,12 @@ Quintus.Input = function(Q) {
       this.touchEnabled = true;
     },
 
+    /**
+     * Turn off touch (button and joypad) controls and remove event listeners
+     *
+     * @method disableTouchControls
+     * @for Q.InputSystem
+     */
     disableTouchControls: function() {
       Q._each(["touchstart","touchend","touchmove","touchcancel"],function(evt) {
         Q.el.removeEventListener(evt,this.touchDispatchHandler);
@@ -222,8 +374,38 @@ Quintus.Input = function(Q) {
       Q.el.removeEventListener('touchend',this.joypadEnd);
       Q.el.removeEventListener('touchcancel',this.joypadEnd);
       this.touchEnabled = false;
+
+      // clear existing inputs
+      for(var input in Q.inputs) {
+        Q.inputs[input] = false;
+      }
     },
 
+    /**
+     * Activate joypad controls (i.e. 4-way touch controls)
+     *
+     * Lots of options, defaults are:
+     *
+     *     {
+     *      size: 50,
+     *      trigger: 20,
+     *      center: 25,
+     *      color: "#CCC",
+     *      background: "#000",
+     *      alpha: 0.5,
+     *      zone: Q.width / 2,
+     *      inputs: DEFAULT_JOYPAD_INPUTS
+     *    }
+     *
+     *  Default joypad controls is an array that defines the inputs to bind to:
+     *
+     *       // Clockwise from midnight (a la CSS)
+     *       var DEFAULT_JOYPAD_INPUTS =  [ 'up','right','down','left'];
+     *
+     * @method joypadControls
+     * @for Q.InputSystem
+     * @param {Object} [opts] -  joypad options
+     */
    joypadControls: function(opts) {
       if(this.joypadEnabled) { return false; }
       if(!hasTouch) { return false; }
@@ -249,14 +431,14 @@ Quintus.Input = function(Q) {
           if(loc.x < joypad.zone) {
             joypad.joypadTouch = touch.identifier;
             joypad.centerX = loc.x;
-            joypad.centerY = loc.y; 
+            joypad.centerY = loc.y;
             joypad.x = null;
             joypad.y = null;
           }
         }
       };
 
-      
+
       this.joypadMove = function(e) {
         if(joypad.joypadTouch !== null) {
           var evt = e;
@@ -290,12 +472,12 @@ Quintus.Input = function(Q) {
                 if(triggers[k]) {
                   Q.inputs[actionName] = true;
 
-                  if(!joypad.triggers[k]) { 
+                  if(!joypad.triggers[k]) {
                     Q.input.trigger(actionName);
                   }
                 } else {
                   Q.inputs[actionName] = false;
-                  if(joypad.triggers[k]) { 
+                  if(joypad.triggers[k]) {
                     Q.input.trigger(actionName + "Up");
                   }
                 }
@@ -317,16 +499,19 @@ Quintus.Input = function(Q) {
         e.preventDefault();
       };
 
-      this.joypadEnd = function(e) { 
+      this.joypadEnd = function(e) {
           var evt = e;
 
           if(joypad.joypadTouch !== null) {
-            for(var i=0,len=evt.changedTouches.length;i<len;i++) { 
+            for(var i=0,len=evt.changedTouches.length;i<len;i++) {
             var touch = evt.changedTouches[i];
               if(touch.identifier === joypad.joypadTouch) {
                 for(var k=0;k<joypad.triggers.length;k++) {
                   var actionName = joypad.inputs[k];
                   Q.inputs[actionName] = false;
+                    if(joypad.triggers[k]) {
+                        Q.input.trigger(actionName + "Up");
+                    }
                 }
                 joypad.joypadTouch = null;
                 break;
@@ -344,16 +529,40 @@ Quintus.Input = function(Q) {
       this.joypadEnabled = true;
     },
 
+    /**
+     * Activate mouse controls - mouse controls don't trigger events, but just set `Q.inputs['mouseX']` & `Q.inputs['mouseY']` on each frame.
+     *
+     * Default options:
+     *
+     *     {
+     *       stageNum: 0,
+     *       mouseX: "mouseX",
+     *       mouseY: "mouseY",
+     *       cursor: "off"
+     *     }
+     *
+     * @method mouseControls
+     * @for Q.InputSystem
+     * @param {Object} [options] - override default options
+     */
     mouseControls: function(options) {
       options = options || {};
 
       var stageNum = options.stageNum || 0;
       var mouseInputX = options.mouseX || "mouseX";
       var mouseInputY = options.mouseY || "mouseY";
+      var cursor = options.cursor || "off";
 
       var mouseMoveObj = {};
 
-      Q.el.style.cursor = 'none';
+      if(cursor !== "on") {
+          if(cursor === "off") {
+              Q.el.style.cursor = 'none';
+          }
+          else {
+              Q.el.style.cursor = cursor;
+          }
+      }
 
       Q.inputs[mouseInputX] = 0;
       Q.inputs[mouseInputY] = 0;
@@ -361,11 +570,18 @@ Quintus.Input = function(Q) {
       Q._mouseMove = function(e) {
         e.preventDefault();
         var touch = e.touches ? e.touches[0] : e;
-        var el = Q.el, 
-            posX = touch.offsetX,
-            posY = touch.offsetY,
-            eX, eY,
-            stage = Q.stage(stageNum);
+        var el = Q.el,
+          rect = el.getBoundingClientRect(),
+          style = window.getComputedStyle(el),
+          posX = touch.clientX - rect.left - parseInt(style.paddingLeft, 10),
+          posY = touch.clientY - rect.top  - parseInt(style.paddingTop, 10);
+
+        var stage = Q.stage(stageNum);
+
+        if(Q._isUndefined(posX) || Q._isUndefined(posY)) {
+          posX = touch.offsetX;
+          posY = touch.offsetY;
+        }
 
         if(Q._isUndefined(posX) || Q._isUndefined(posY)) {
           posX = touch.layerX;
@@ -389,25 +605,57 @@ Quintus.Input = function(Q) {
         }
       };
 
+      /**
+       * Fired when the user scrolls the mouse wheel up or down
+       * Anyone subscribing to the "mouseWheel" event will receive an event with one numeric parameter
+       * indicating the scroll direction. -1 for down, 1 for up.
+       * @private
+       */
+      Q._mouseWheel = function(e) {
+        // http://www.sitepoint.com/html5-javascript-mouse-wheel/
+        // cross-browser wheel delta
+        e = window.event || e; // old IE support
+        var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
+        Q.input.trigger('mouseWheel', delta);
+      };
+
       Q.el.addEventListener('mousemove',Q._mouseMove,true);
       Q.el.addEventListener('touchstart',Q._mouseMove,true);
       Q.el.addEventListener('touchmove',Q._mouseMove,true);
+      Q.el.addEventListener('mousewheel',Q._mouseWheel,true);
+      Q.el.addEventListener('DOMMouseScroll',Q._mouseWheel,true);
     },
 
+    /**
+     * Turn off mouse controls
+     *
+     * @method disableMouseControls
+     * @for Q.InputSystem
+     */
     disableMouseControls: function() {
       if(Q._mouseMove) {
-        Q.el.removeEventListener("mousemove",Q._mouseMove);
+        Q.el.removeEventListener("mousemove",Q._mouseMove, true);
+        Q.el.removeEventListener("mousewheel",Q._mouseWheel, true);
+        Q.el.removeEventListener("DOMMouseScroll",Q._mouseWheel, true);
         Q.el.style.cursor = 'inherit';
         Q._mouseMove = null;
       }
     },
 
+    /**
+     * Draw the touch buttons on the screen
+     *
+     * overload this to change how buttons are drawn
+     *
+     * @method drawButtons
+     * @for Q.InputSystem
+     */
     drawButtons: function() {
       var keypad = Q.input.keypad,
           ctx = Q.ctx;
 
       ctx.save();
-      ctx.textAlign = "center"; 
+      ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
       for(var i=0;i<keypad.controls.length;i++) {
@@ -415,7 +663,7 @@ Quintus.Input = function(Q) {
 
         if(control[0]) {
           ctx.font = "bold " + (keypad.size/2) + "px arial";
-          var x = i * keypad.unit + keypad.gutter,
+          var x = keypad.left + i * keypad.unit + keypad.gutter,
               y = keypad.bottom - keypad.unit,
               key = Q.inputs[control[0]];
 
@@ -441,12 +689,22 @@ Quintus.Input = function(Q) {
       ctx.beginPath();
       ctx.globalAlpha=joypad.alpha;
       ctx.fillStyle = color;
-      ctx.arc(x, y, size, 0, Math.PI*2, true); 
+      ctx.arc(x, y, size, 0, Math.PI*2, true);
       ctx.closePath();
       ctx.fill();
       ctx.restore();
     },
 
+
+
+    /**
+     * Draw the joypad on the screen
+     *
+     * overload this to change how joypad is drawn
+     *
+     * @method drawJoypad
+     * @for Q.InputSystem
+     */
     drawJoypad: function() {
       var joypad = Q.joypad;
       if(joypad.joypadTouch !== null) {
@@ -465,6 +723,14 @@ Quintus.Input = function(Q) {
 
     },
 
+    /**
+     * Called each frame by the stage game loop to render any onscreen UI
+     *
+     * calls `drawJoypad` and `drawButtons` if enabled
+     *
+     * @method drawCanvas
+     * @for Q.InputSystem
+     */
     drawCanvas: function() {
       if(this.touchEnabled) {
         this.drawButtons();
@@ -477,9 +743,23 @@ Quintus.Input = function(Q) {
 
 
   });
-  
+
+  /**
+   * Instance of the input subsytem that is actually used during gameplay
+   *
+   * @property Q.input
+   * @for Quintus.Input
+   * @type Q.InputSystem
+   */
   Q.input = new Q.InputSystem();
 
+  /**
+   * Helper method to activate controls with default options
+   *
+   * @for Quintus.Input
+   * @method Q.controls
+   * @param {Boolean} joypad - enable 4-way joypad (true) or just left, right controls (false, undefined)
+   */
   Q.controls = function(joypad) {
     Q.input.keyboardControls();
 
@@ -494,12 +774,31 @@ Quintus.Input = function(Q) {
 
     return Q;
   };
-  
 
+
+  /**
+   * Platformer Control Component
+   *
+   * Adds 2D platformer controls onto a Sprite
+   *
+   * Platformer controls bind to left, and right and allow the player to jump.
+   *
+   * Adds the following properties to the entity to control speed and jumping:
+   *
+   *      {
+   *        speed: 200,
+   *        jumpSpeed: -300
+   *      }
+   *
+   *
+   * @class platformerControls
+   * @for Quintus.Input
+   */
   Q.component("platformerControls", {
     defaults: {
       speed: 200,
-      jumpSpeed: -300
+      jumpSpeed: -300,
+      collisions: []
     },
 
     added: function() {
@@ -522,26 +821,91 @@ Quintus.Input = function(Q) {
     step: function(dt) {
       var p = this.entity.p;
 
-      if(Q.inputs['left']) {
-        p.vx = -p.speed;
-        p.direction = 'left';
-      } else if(Q.inputs['right']) {
-        p.direction = 'right';
-        p.vx = p.speed;
-      } else {
-        p.vx = 0;
-      }
+      if(p.ignoreControls === undefined || !p.ignoreControls) {
+        var collision = null;
 
-      if(p.landed > 0 && (Q.inputs['up'] || Q.inputs['action'])) {
-        p.vy = p.jumpSpeed;
-        p.landed = -dt;
+        // Follow along the current slope, if possible.
+        if(p.collisions !== undefined && p.collisions.length > 0 && (Q.inputs['left'] || Q.inputs['right'] || p.landed > 0)) {
+          if(p.collisions.length === 1) {
+            collision = p.collisions[0];
+          } else {
+            // If there's more than one possible slope, follow slope with negative Y normal
+            collision = null;
+
+            for(var i = 0; i < p.collisions.length; i++) {
+              if(p.collisions[i].normalY < 0) {
+                collision = p.collisions[i];
+              }
+            }
+          }
+
+          // Don't climb up walls.
+          if(collision !== null && collision.normalY > -0.3 && collision.normalY < 0.3) {
+            collision = null;
+          }
+        }
+
+        if(Q.inputs['left']) {
+          p.direction = 'left';
+          if(collision && p.landed > 0) {
+            p.vx = p.speed * collision.normalY;
+            p.vy = -p.speed * collision.normalX;
+          } else {
+            p.vx = -p.speed;
+          }
+        } else if(Q.inputs['right']) {
+          p.direction = 'right';
+          if(collision && p.landed > 0) {
+            p.vx = -p.speed * collision.normalY;
+            p.vy = p.speed * collision.normalX;
+          } else {
+            p.vx = p.speed;
+          }
+        } else {
+          p.vx = 0;
+          if(collision && p.landed > 0) {
+            p.vy = 0;
+          }
+        }
+
+        if(p.landed > 0 && (Q.inputs['up'] || Q.inputs['action']) && !p.jumping) {
+          p.vy = p.jumpSpeed;
+          p.landed = -dt;
+          p.jumping = true;
+        } else if(Q.inputs['up'] || Q.inputs['action']) {
+          this.entity.trigger('jump', this.entity);
+          p.jumping = true;
+        }
+
+        if(p.jumping && !(Q.inputs['up'] || Q.inputs['action'])) {
+          p.jumping = false;
+          this.entity.trigger('jumped', this.entity);
+          if(p.vy < p.jumpSpeed / 3) {
+            p.vy = p.jumpSpeed / 3;
+          }
+        }
       }
       p.landed -= dt;
-
     }
   });
 
 
+  /**
+   * Step Controls component
+   *
+   * Adds Step (square grid based) 4-ways controls onto a Sprite
+   *
+   * Adds the following properties to the entity:
+   *
+   *      {
+   *        stepDistance: 32, // should be tile size
+   *        stepDelay: 0.2  // seconds to delay before next step
+   *      }
+   *
+   *
+   * @class stepControls
+   * @for Quintus.Input
+   */
   Q.component("stepControls", {
 
     added: function() {
@@ -598,13 +962,13 @@ Quintus.Input = function(Q) {
         p.diffY = p.stepDistance;
       }
 
-      if(p.diffY || p.diffX ) { 
+      if(p.diffY || p.diffX ) {
         p.stepping = true;
         p.origX = p.x;
         p.origY = p.y;
         p.destX = p.x + p.diffX;
         p.destY = p.y + p.diffY;
-        p.stepWait = p.stepDelay; 
+        p.stepWait = p.stepDelay;
       }
 
     }
@@ -612,3 +976,11 @@ Quintus.Input = function(Q) {
   });
 };
 
+
+};
+
+if(typeof Quintus === 'undefined') {
+  module.exports = quintusInput;
+} else {
+  quintusInput(Quintus);
+}
