@@ -18,38 +18,26 @@ angular.module('starter', ['ionic'])
         StatusBar.styleDefault();
       }
 
-      //var Q = window.Q = Quintus({audioSupported: ['wav', 'mp3', 'ogg']})
-      var Q = Quintus({
+      var Q = window.Q = Quintus({
         imagePath: 'img/'
       })
-        .include('Sprites, Scenes, Input, 2D, Anim, Touch, UI, TMX')
+        .include("Sprites, Scenes, Input, 2D, Anim, Touch, UI, TMX")
         .setup({maximize: true})
-        .controls().touch();
-      //.enableSound();
+        .controls(true).touch();
 
       Q.gravityY = 0;
       Q.gravityX = 0;
       Q.SPRITE_PLAYER = 1;
 
-      Q.Sprite.extend('Player', {
-        init: function(p) {
+      Q.Sprite.extend("Player", {
+        init: function (p) {
           this._super(p, {
-            sheet: 'player',
-            sprite: 'player',
-            direction: 'right',
+            sheet: "player",  // Setting a sprite sheet sets sprite width and height
+            sprite: "player",
+            direction: "right",
             type: Q.SPRITE_PLAYER,
             collisionMask: Q.SPRITE_DEFAULT
           });
-
-          /* TODO : See if this is needed
-           this.p.points = [
-           [-20, -20],
-           [20, -20],
-           [15, 20],
-           [-15, 20]
-           ];
-           */
-
           this.add('2d, platformerControls, animation, tween');
 
           this.on('hit.sprite', function(collision) {
@@ -79,30 +67,21 @@ angular.module('starter', ['ionic'])
         }
       });
 
-      Q.scene('level1', function(stage) {
-        Q.stageTMX('all-levels.tmx', stage);
+      Q.scene("level1", function (stage) {
+        Q.stageTMX("all-levels.tmx", stage);
+        stage.add("viewport").follow(Q("Player").first());
 
-        stage.add('viewport').follow(Q('Player').first());
-        stage.viewport.scale = 4;
+        stage.viewport.scale = 1;
       });
 
-      Q.loadTMX('all-levels.tmx, player.json, SaraFullSheet.png, dungeon.png', function() {
-        Q.compileSheets('SaraFullSheet.png', 'player.json');
-        /*
-         Q.animations('player', {
-         walk_right: {frames: [0, 1, 2, 3, 4, 5, 6, 7], rate: 1 / 15, flip: false, loop: true},
-         walk_left: {frames: [0, 1, 2, 3, 4, 5, 6, 7], rate: 1 / 15, flip: 'x', loop: true},
-         jump_right: {frames: [13, 14, 15, 16, 17, 18], rate: 1 / 8, flip: false, loop: false},
-         jump_left: {frames: [13, 14, 15, 16, 17, 18], rate: 1 / 8, flip: 'x', loop: false},
-         stand_right: {frames: [19], rate: 1 / 10, flip: false},
-         stand_left: {frames: [19], rate: 1 / 10, flip: 'x'},
-         duck_right: {frames: [1], rate: 1 / 10, flip: false},
-         duck_left: {frames: [1], rate: 1 / 10, flip: 'x'},
-         climb: {frames: [20, 21, 22, 23], rate: 1 / 3, flip: false},
-         fire_right: {frames: [11,12], rate: 1 / 3, flip: false},
-         fire_left: {frames: [11,12], rate: 1 / 3, flip: 'x'}
-         });
-         */
+      Q.loadTMX("all-levels.tmx, test-64.png, player.json, dungeon.png, SaraFullSheet.png", function () {
+        Q.compileSheets("SaraFullSheet.png", "player.json");
+        Q.animations("player", {
+          walk_right: {frames: [0, 1, 2, 3, 4, 5, 6, 7], rate: 1 / 15, flip: false, loop: true},
+          walk_left: {frames: [0, 1, 2, 3, 4, 5, 6, 7], rate: 1 / 15, flip: "x", loop: true}
+        });
+
+        Q.stageScene("level1");
       }, {
         progressCallback: function(loaded, total) {
           $rootScope.loadingTotal = Math.floor(loaded / total * 100) + '%';
