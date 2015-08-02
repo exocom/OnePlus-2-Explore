@@ -88,7 +88,7 @@ angular.module('starter', ['ionic'])
         if(audio){
           audio.stop();
         }
-        audio = new Audio("../audio/level1.ogg", 100, true);
+        audio = new Audio("http://opengameart.org/sites/default/files/audio_preview/00%20intro_0.ogg.mp3", 100, true);
         audio.play();
       });
 
@@ -153,7 +153,7 @@ angular.module('starter', ['ionic'])
         if(audio){
           audio.stop();
         }
-        //audio = new Audio("../audio/level1.ogg", 100, true);
+        //audio = new Audio("../audio/JRPG_mainTheme.ogg.mp3", 100, true);
         //audio.play();
       });
 
