@@ -4,7 +4,7 @@ angular.module('starter', ['ionic'])
     //})
     //.controller('foo', function() {
     $ionicLoading.show({
-      template: '<ion-spinner icon="android"></ion-spinner><br>{{$root.loadingTotal}}'
+      template: 'Loading'
     });
     $rootScope.loadingTotal = 0;
 
@@ -40,6 +40,14 @@ angular.module('starter', ['ionic'])
             collisionMask: Q.SPRITE_DEFAULT | Q.SPRITE_GEM,
             level: 1
           });
+
+          this.p.points = [
+            [-20, -10],
+            [20, -10],
+            [15, 20],
+            [-15, 20]
+          ];
+
           this.add('2d, platformerControls, animation, tween');
 
           this.on('hit.sprite', function(collision) {
@@ -68,29 +76,31 @@ angular.module('starter', ['ionic'])
         step: function(dt) {
           var p = this.p;
 
+          var speed = Q.inputs['fire'] ? 15 : 5;
+
           if (p.isDancing) {
             this.play('dance_' + this.p.direction);
           } else {
             switch (true) {
               case Q.inputs['right']:
-                p.x += 5;
+                p.x += speed;
                 this.p.direction = 'right';
                 this.play('walk_' + this.p.direction);
                 break;
               case Q.inputs['left']:
-                p.x -= 5;
+                p.x -= speed;
                 this.p.direction = 'left';
                 this.play('walk_' + this.p.direction);
                 break;
               case Q.inputs['up']:
-                p.y -= 5;
+                p.y -= speed;
                 this.p.direction = 'up';
                 this.play('walk_' + this.p.direction);
                 break;
               case Q.inputs['down']:
                 this.p.direction = 'down';
                 this.play('walk_' + this.p.direction);
-                p.y += 5;
+                p.y += speed;
                 break;
               default :
                 this.play('stand_' + this.p.direction);
@@ -155,7 +165,7 @@ angular.module('starter', ['ionic'])
         Q.stageTMX('all-levels.tmx', stage);
 
         // Move the player into position
-        Q('Player').items[0].p.x = 6750;
+        Q('Player').items[0].p.x = 5900;
         Q('Player').items[0].p.y = 1085;
         Q('Player').items[0].p.level = 3;
 
