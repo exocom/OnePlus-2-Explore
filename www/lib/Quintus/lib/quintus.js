@@ -28,7 +28,7 @@ various other modules:
 @module Quintus
 */
 
-var quintusCore = function(window,key) { 
+var quintusCore = function(window,key) {
   "use strict";
 
 /**
@@ -1745,11 +1745,13 @@ var Quintus = window[key] = function(opts) {
         fileExt = fileParts[fileParts.length-1].toLowerCase();
 
     if(document.location.origin === "file://" || document.location.origin === "null") {
+      /*
       if(!Q.fileURLAlert) {
         Q.fileURLAlert = true;
         alert("Quintus Error: Loading assets is not supported from file:// urls - please run from a local web-server and try again");
       }
       return errorCallback();
+      */
     }
 
     request.onreadystatechange = function() {
