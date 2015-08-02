@@ -176,7 +176,7 @@ angular.module('starter', ['ionic'])
         stage.add('viewport'); //.follow(Q('Player').first());
         var x = 0;
         setInterval(function() {
-          if(x < 12) {
+          if(x < 14) {
             stage.viewport.scale = stage.viewport.scale / 1.3;
             stage.centerOn(3936,3552);
             x++;
