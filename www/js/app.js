@@ -76,7 +76,7 @@ angular.module('starter', ['ionic'])
         step: function(dt) {
           var p = this.p;
 
-          var speed = Q.inputs['fire'] ? 15 : 5;
+          var speed = Q.inputs['fire'] ? 5 : 5;
 
           if (p.isDancing) {
             this.play('dance_' + this.p.direction);
@@ -183,21 +183,30 @@ angular.module('starter', ['ionic'])
       Q.scene('ending', function(stage) {
         Q.stageTMX('all-levels.tmx', stage);
         // TODO : play around with where the zooming starts from
-        stage.add('viewport'); //.follow(Q('Player').first());
+        stage.add('viewport');
+        Q('Player').destroy();
+        Q('Gems').destroy();
+
         var x = 0;
-        setInterval(function() {
-          if(x < 14) {
-            stage.viewport.scale = stage.viewport.scale / 1.3;
-            stage.centerOn(3936,3552);
-            x++;
-          }
-        },50);
+        var mapScale = [.3,.1,.055,.045];
 
         if(audio && audio.pause){
           audio.pause();
         }
-        audio = new Audio('http://opengameart.org/sites/default/files/audio_preview/win%20music%203.wav.mp3', 100, true);
-        audio.play();
+
+        var resizeMap = function() {
+          if(x < 4) {
+            setTimeout(function() {
+              setTimeout(resizeMap,10);
+              stage.centerOn(3936, 3552);
+              stage.viewport.scale = mapScale[x];
+              stage.centerOn(3936, 3552);
+
+              x++;
+            }, x === 0 ? 10 : 2000 + (x * 250));
+          }
+        };
+        resizeMap();
       });
 
 
